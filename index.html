@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" id="themeColorMeta" content="#0E0F11">
 <title>GAIP | PLUS WM Academy 사업 보고</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -568,8 +569,9 @@ body.light #chatPanel{box-shadow:0 24px 64px rgba(25,31,40,.2);}
 .ch-input{display:flex; gap:8px; padding:10px 14px 14px; flex:none;}
 .ch-input input{
   flex:1; background:var(--bg-chip); border:none; outline:none; border-radius:999px;
-  padding:11px 16px; color:var(--tx-1); font-family:inherit; font-size:13.5px; min-width:0;
+  padding:11px 16px; color:var(--tx-1); font-family:inherit; font-size:16px; min-width:0;
 }
+@media (min-width:768px){ .ch-input input{ font-size:13.5px; } }
 .ch-input input::placeholder{color:var(--tx-4)}
 .ch-send{
   width:40px; height:40px; border-radius:50%; border:none; background:var(--org); color:#fff;
@@ -1013,7 +1015,7 @@ function show(id, push=true){
   current = id;
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id === 'v'+'-'+id));
   document.body.classList.toggle('lock', id === 'home');   /* 홈: 스크롤 잠금 */
-  window.scrollTo(0,0);
+  window.scrollTo({top:0, left:0, behavior:'instant'});     /* smooth 스크롤 잔상 방지 — 즉시 최상단 이동 후 진입 모션 재생 */
   if(push) history.replaceState(null,'','#'+id);
   requestAnimationFrame(()=>requestAnimationFrame(armReveal));
 }
@@ -1069,7 +1071,11 @@ document.addEventListener('scroll', reveal, {passive:true});
 /* ---------- 다크/라이트 모드: 디바이스 설정 기본 + 수동 전환 ---------- */
 const mqLight = matchMedia('(prefers-color-scheme: light)');
 let themeManual = false;
-function setTheme(light){ document.body.classList.toggle('light', light); }
+const themeColorMeta = document.getElementById('themeColorMeta');
+function setTheme(light){
+  document.body.classList.toggle('light', light);
+  if(themeColorMeta) themeColorMeta.setAttribute('content', light ? '#F7F8FA' : '#0E0F11');
+}
 setTheme(mqLight.matches);
 mqLight.addEventListener('change', e=>{ if(!themeManual) setTheme(e.matches); });
 document.addEventListener('click', e=>{
@@ -1103,6 +1109,25 @@ document.getElementById('chClose').addEventListener('click', ()=>{
   chPanel.classList.remove('open');
   chFab.classList.remove('open');
 });
+
+/* 모바일 키보드 대응 — visualViewport 기준으로 패널을 키보드 위에 고정 */
+if(window.visualViewport){
+  const vv = window.visualViewport;
+  function adjustChatPanel(){
+    if(!chPanel.classList.contains('open')) return;
+    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    chPanel.style.bottom = (kb + 14) + 'px';
+    chPanel.style.height = `min(640px, ${vv.height - 20}px)`;
+  }
+  vv.addEventListener('resize', adjustChatPanel);
+  vv.addEventListener('scroll', adjustChatPanel);
+  chIn.addEventListener('focus', ()=>setTimeout(adjustChatPanel, 50));
+  chIn.addEventListener('blur', ()=>{
+    chPanel.style.bottom = '';
+    chPanel.style.height = '';
+  });
+  chFab.addEventListener('click', ()=>setTimeout(adjustChatPanel, 260));
+}
 function chAdd(html, me){
   const d = document.createElement('div');
   d.className = 'msg' + (me ? ' me' : '');
