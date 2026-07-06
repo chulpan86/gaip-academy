@@ -1002,7 +1002,7 @@ body.light #chatPanel{box-shadow:0 24px 64px rgba(25,31,40,.2);}
   <div class="ch-msgs" id="chMsgs">
     <div class="msg"><span class="m-ava"><img class="ch-logo" src="" alt=""></span><div class="bb">안녕하세요, <b>GAIP AI 멘토</b>예요. 아카데미 커리큘럼부터 상품까지, 궁금한 것을 물어보세요.</div></div>
   </div>
-  <div class="ch-sugs">
+  <div class="ch-sugs" id="chSugs">
     <button class="sug">8090 펀드는 어떤 상품이야?</button>
     <button class="sug">필드트립 일정 알려줘</button>
     <button class="sug">커리큘럼 요약해줘</button>
@@ -1102,11 +1102,13 @@ const QA = [
   {k:['커리큘럼','요약','강의','수업'], a:'국내 아카데미는 <b>주 1회, 총 6주</b> 과정이에요. AI 산업 → 피지컬 AI → 방산기업 순으로 사모펀드 투자와 연결되도록 설계했고, 리처드 도킨스의 기조강연 “AI도 의식이 있다”로 시작합니다. 매 주차 각 분야 최고 전문가 1~2명이 강연해요.'},
   {k:['수료','특전','좋아','혜택'], a:'수료하시면 <b>사모펀드 우선 투자 기회</b>, <b>AI 멘토 상시 이용권</b>, 그리고 HNW 멤버 간 프라이빗 커뮤니티 <b>Investment Club</b> 멤버십이 이어집니다. 아카데미가 끝나도 관계는 계속돼요.'}
 ];
-const CH_FB = '아직 데모 버전이라 준비된 질문에 먼저 답해드리고 있어요. 아래 추천 질문을 눌러보시겠어요?';
+const CH_FB = '죄송해요, 지금 답변을 가져오지 못했어요. 잠시 후 다시 한 번 물어봐 주시겠어요?';
 const chFab = document.getElementById('chatFab');
 const chPanel = document.getElementById('chatPanel');
 const chMsgs = document.getElementById('chMsgs');
 const chIn = document.getElementById('chIn');
+const chSugs = document.getElementById('chSugs');
+chSugs.querySelectorAll('.sug').forEach(b=>b.addEventListener('click', ()=>chAsk(b.textContent)));
 /* 로고는 홈 로고에서 가져옴 — 이미지 내장 버전에서도 그대로 동작 */
 document.querySelectorAll('.ch-logo').forEach(i=>{ i.src = document.querySelector('.lg-d').src; });
 const AVA = chMsgs.querySelector('.m-ava').innerHTML;
@@ -1151,8 +1153,18 @@ function chAdd(html, me){
 /* Cloudflare Worker 프록시 주소 — 배포 후 본인 Worker URL로 교체 */
 const CHAT_ENDPOINT = 'https://gaip-chat-proxy.chulmin-hanwha.workers.dev';
 
+/* 최근 4턴(user+assistant 최대 8메시지)만 유지 — 토큰 누적 방지 */
+const CHAT_MAX_TURNS = 4;
+let chatHistory = [];
+function chPushHistory(role, content){
+  chatHistory.push({ role, content });
+  const maxMsgs = CHAT_MAX_TURNS * 2;
+  if(chatHistory.length > maxMsgs) chatHistory = chatHistory.slice(-maxMsgs);
+}
+
 async function chAsk(q){
   if(!q.trim()) return;
+  chSugs.remove(); /* 대화가 시작되면 추천 질문은 더 이상 노출하지 않음 */
   chAdd(q, true);
   const t = document.createElement('div');
   t.className = 'msg typing';
@@ -1165,7 +1177,7 @@ async function chAsk(q){
     const res = await fetch(CHAT_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: q })
+      body: JSON.stringify({ message: q, history: chatHistory })
     });
     if(res.ok){
       const data = await res.json();
@@ -1178,6 +1190,10 @@ async function chAsk(q){
   if(!answer){
     const hit = QA.find(x=>x.k.some(k=>q.includes(k)));
     answer = hit ? hit.a : CH_FB;
+  } else {
+    /* 실제 AI 응답일 때만 대화 이력에 반영 (폴백 스크립트 응답은 제외) */
+    chPushHistory('user', q);
+    chPushHistory('assistant', answer);
   }
 
   const minWait = 500 + Math.random()*300;
@@ -1186,7 +1202,6 @@ async function chAsk(q){
     chAdd(answer, false);
   }, minWait);
 }
-document.querySelectorAll('.sug').forEach(b=>b.addEventListener('click', ()=>chAsk(b.textContent)));
 document.getElementById('chSend').addEventListener('click', ()=>{ chAsk(chIn.value); chIn.value=''; });
 chIn.addEventListener('keydown', e=>{ if(e.key==='Enter'){ chAsk(chIn.value); chIn.value=''; } });
 
