@@ -807,6 +807,29 @@ body.light .trip-card, body.light .eco-cell{
 .ch-greet .g2{font-size:13px;}
 .ch-model{font-size:12px;}
 
+/* 챗봇 테마 통합 — 다크/라이트 모두 사이트 토큰 기반 (크림 톤 제거) */
+#chatPanel{background:var(--bg-card-2); border-color:var(--hairline);}
+.ch-head{border-bottom-color:var(--hairline);}
+.ch-head .t1{color:var(--tx-1);}
+.ch-x{color:var(--tx-3);}
+.ch-x:hover{background:var(--bg-chip); color:var(--tx-1);}
+.ch-greet .g1{color:var(--tx-1);}
+.ch-greet .g2{color:var(--tx-3);}
+.msg .bb{color:var(--tx-2);}
+.msg .bb b{color:var(--tx-1);}
+.msg.me .bb{background:var(--bg-chip); border-color:var(--hairline); color:var(--tx-1);}
+.typing .dt{background:var(--tx-4);}
+.sug{background:var(--bg-card); border-color:var(--line-mid); color:var(--tx-2);}
+.sug:hover{background:var(--bg-chip); border-color:var(--line-strong);}
+.ch-box{background:var(--bg-card); border-color:var(--line-mid); box-shadow:none;}
+.ch-box:focus-within{border-color:var(--line-strong); box-shadow:none;}
+.ch-box input{color:var(--tx-1);}
+.ch-box input::placeholder{color:var(--tx-4);}
+.ch-model{color:var(--tx-4);}
+.ch-send{border-color:var(--line-strong); color:var(--tx-1);}
+.ch-send:hover{background:var(--bg-chip);}
+body:not(.light) #chatPanel .ch-logo{filter:invert(1);} /* 다크에서만 검정 PLUS 로고 → 흰색 반전 */
+
 /* ---- 5. 구조 개편 동반 스타일 (텍스트/순서 수정 피드백) ---- */
 /* 홈 히어로 — 워드마크 자리에 문장형 카피 (그라디언트 유지) */
 .wordmark{font-size:clamp(26px,6.6vw,36px); line-height:1.42; letter-spacing:-.02em; word-break:keep-all;}
