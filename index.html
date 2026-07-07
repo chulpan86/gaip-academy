@@ -804,6 +804,7 @@ body.light .trip-card, body.light .eco-cell{
 /* 챗봇 텍스트도 동반 상향 */
 .msg .bb{font-size:14px;}
 .sug{font-size:13px;}
+.ch-follow{display:flex; flex-wrap:wrap; gap:7px; padding:0 0 2px 27px;}
 .ch-greet .g2{font-size:13px;}
 .ch-model{font-size:12px;}
 
@@ -1481,11 +1482,50 @@ function chAdd(html, me){
   chMsgs.scrollTop = chMsgs.scrollHeight;
   return d;
 }
+/* ---------- 스트리밍 타자 효과 — 답변이 글자 단위로 흘러나오게 ---------- */
+function chStream(html, q){
+  const d = chAdd('', false);
+  const bb = d.querySelector('.bb');
+  let i = 0, out = '';
+  (function step(){
+    let n = 2 + Math.floor(Math.random()*3);
+    while(n-- > 0 && i < html.length){
+      if(html[i] === '<'){ /* 태그는 통째로 — 마크업 깨짐 방지 */
+        const j = html.indexOf('>', i);
+        out += html.slice(i, j < 0 ? html.length : j + 1);
+        i = j < 0 ? html.length : j + 1;
+      } else {
+        out += html[i++];
+      }
+    }
+    bb.innerHTML = out;
+    chMsgs.scrollTop = chMsgs.scrollHeight;
+    if(i < html.length) setTimeout(step, 18 + Math.random()*26);
+    else chFollow(q + ' ' + html);
+  })();
+}
+/* ---------- 답변 후 맥락 기반 후속 질문 제안 ---------- */
+const CH_FOLLOW = [
+  {k:['8090','넥서스'], s:['필드트립 일정 알려줘','수료하면 뭐가 좋아?']},
+  {k:['필드트립','샌프란'], s:['필드트립에서 어떤 기업을 방문해?','8090 펀드는 어떤 상품이야?']},
+  {k:['커리큘럼','강의','주차'], s:['강사진은 누구야?','필드트립 일정 알려줘']},
+  {k:['수료','특전','Investment','멤버십'], s:['커리큘럼 요약해줘','8090 펀드는 어떤 상품이야?']}
+];
+function chFollow(ctx){
+  const hit = CH_FOLLOW.find(f=>f.k.some(k=>ctx.includes(k)));
+  const sugs = hit ? hit.s : ['커리큘럼 요약해줘','수료하면 뭐가 좋아?'];
+  const w = document.createElement('div');
+  w.className = 'ch-follow';
+  w.innerHTML = sugs.map(s=>`<button class="sug">${s}</button>`).join('');
+  w.querySelectorAll('.sug').forEach(b=>b.addEventListener('click', ()=>chAsk(b.textContent)));
+  chMsgs.appendChild(w);
+  chMsgs.scrollTop = chMsgs.scrollHeight;
+}
 /* Cloudflare Worker 프록시 주소 — 배포 후 본인 Worker URL로 교체 */
 const CHAT_ENDPOINT = 'https://gaip-chat-proxy.chulmin-hanwha.workers.dev';
 
-/* 최근 4턴(user+assistant 최대 8메시지)만 유지 — 토큰 누적 방지 */
-const CHAT_MAX_TURNS = 4;
+/* 최근 20턴(user+assistant 최대 40메시지) 유지 — 후속 질문 맥락 강화 */
+const CHAT_MAX_TURNS = 20;
 let chatHistory = [];
 function chPushHistory(role, content){
   chatHistory.push({ role, content });
@@ -1497,6 +1537,7 @@ async function chAsk(q){
   if(!q.trim()) return;
   chSugs.remove(); /* 대화가 시작되면 추천 질문은 더 이상 노출하지 않음 */
   const g = document.getElementById('chGreet'); if(g) g.remove(); /* 첫 인사 화면 제거 */
+  document.querySelectorAll('.ch-follow').forEach(f=>f.remove()); /* 이전 후속 질문 제거 */
   chAdd(q, true);
   const t = document.createElement('div');
   t.className = 'msg typing';
@@ -1528,10 +1569,10 @@ async function chAsk(q){
     chPushHistory('assistant', answer);
   }
 
-  const minWait = 500 + Math.random()*300;
+  const minWait = 400 + Math.random()*300;
   setTimeout(()=>{
     t.remove();
-    chAdd(answer, false);
+    chStream(answer, q);
   }, minWait);
 }
 document.getElementById('chSend').addEventListener('click', ()=>{ chAsk(chIn.value); chIn.value=''; });
