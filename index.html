@@ -589,6 +589,7 @@ body.light #chatPanel{box-shadow:0 24px 64px rgba(42,36,24,.16);}
 @keyframes tp{0%,60%,100%{opacity:.3; transform:none} 30%{opacity:1; transform:translateY(-3px)}}
 /* 추천 질문 — Claude 홈 하단 칩 스타일 */
 .ch-sugs{display:flex; flex-wrap:wrap; gap:7px; padding:10px 16px 2px; flex:none;}
+.ch-sugs:empty{display:none;}
 .sug{
   border:1px solid #E0DBCB; color:#5C5847; background:#FFFFFF;
   font-size:12.5px; font-weight:500; border-radius:999px; padding:7px 13px; cursor:pointer;
@@ -1444,19 +1445,13 @@ body:not(.light) #chatPanel .ch-logo{filter:invert(1);} /* 다크에서만 검�
   <div class="ch-msgs" id="chMsgs">
     <div class="ch-greet" id="chGreet">
       <span class="ch-ava"><img class="ch-logo" src="" alt=""></span>
-      <p class="g1">이 기획안, 무엇이 궁금하세요?</p>
-      <p class="g2">추진 배경부터 커리큘럼·예산까지,<br>보고서 내용을 쉽게 설명해 드립니다.</p>
+      <p class="g1">오늘 어떤 도움을 드릴까요?</p>
     </div>
   </div>
-  <div class="ch-sugs" id="chSugs">
-    <button class="sug">GAIP는 왜 추진하나요?</button>
-    <button class="sug">커리큘럼을 요약해줘</button>
-    <button class="sug">필드트립은 어떻게 구성되나요?</button>
-    <button class="sug">예산은 어떻게 편성됐나요?</button>
-  </div>
+  <div class="ch-sugs" id="chSugs"></div>
   <div class="ch-input">
     <div class="ch-box">
-      <input id="chIn" type="text" placeholder="이 기획안에 대해 물어보세요" autocomplete="off">
+      <input id="chIn" type="text" placeholder="무엇이든 물어보세요" autocomplete="off">
       <div class="ch-tools">
         <span class="ch-model"></span>
         <button class="ch-send" id="chSend" aria-label="전송">↑</button>
